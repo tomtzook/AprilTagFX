@@ -1,14 +1,8 @@
 package com.flash3388.apriltagfx.vision;
 
-import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfDouble;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.DoubleBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -45,5 +39,13 @@ public class CamConfig {
 
     public List<Mat> getTVectors() {
         return mTVectors;
+    }
+
+    public Mat getR() {
+        return mRVectors.get(0);
+    }
+
+    public Mat getT() {
+        return mTVectors.get(0);
     }
 }

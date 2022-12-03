@@ -14,6 +14,7 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.MatOfPoint3;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point;
 import org.opencv.core.Point3;
@@ -101,7 +102,7 @@ public class Processor implements AutoCloseable {
                 TagPose pose = estimatePose(detection, detectionInfo);
                 //Mat pose_R = convertMatCoordinateSystem(pose.R);
                 //Mat pose_t = convertMatCoordinateSystem(pose.t);
-                Point3 centerFromCamera = transposeCenter(img, camConfig, pose.R, pose.t);
+                Point3 centerFromCamera = transposeCenter(camConfig, pose.R, pose.t);
 
                 Vector3 objectCenterVec = new Vector3(centerFromCamera.x, centerFromCamera.y, centerFromCamera.z);
                 result.put(new TagInfo(detection.id, objectCenterVec));
@@ -153,25 +154,84 @@ public class Processor implements AutoCloseable {
                 Mat.zeros(3, 1, CvType.CV_64F));
     }
 
-    private static Point3 transposeCenter(Mat img, CamConfig camConfig, Mat R, Mat t) {
-        Mat centerPoint = Mat.zeros(3, 1, CvType.CV_64F);
+    private static Mat convertCoordinateSystem(Mat mat, Mat R, Mat t) {
         Mat result = new Mat();
-        Core.add(R.cross(centerPoint), t, result);
-
-        return new Point3(
-                result.get(0, 0)[0],
-                result.get(1, 0)[0],
-                result.get(2, 0)[0]
-        );
+        Core.add(R.cross(mat), t, result);
+        return result;
     }
 
-    private static Mat convertMatCoordinateSystem(Mat mat) {
+    private static Mat camToWorld(Mat mat, CamConfig camConfig) {
+        return convertCoordinateSystem(mat, camConfig.getR(), camConfig.getT());
+    }
+
+    private static Mat translateMat(Mat mat, Mat t) {
+        Mat result = new Mat();
+        Core.add(mat, t, result);
+        return result;
+    }
+
+    private static MatOfPoint2f unprojectPoints(MatOfPoint2f points, CamConfig camConfig) {
+        MatOfPoint2f undistortedPoints = new MatOfPoint2f();
+        Calib3d.undistortPoints(points,
+                undistortedPoints,
+                camConfig.getIntrinsicMatrix(),
+                camConfig.getDistCoefficients());
+
+        Mat intrinsicMat = camConfig.getIntrinsicMatrix();
+        double focalCenterX = intrinsicMat.get(0, 2)[0];
+        double focalCenterY = intrinsicMat.get(1, 2)[0];
+        double focalLengthX = intrinsicMat.get(0, 0)[0];
+        double focalLengthY = intrinsicMat.get(1, 1)[0];
+
+        MatOfPoint2f sub = new MatOfPoint2f();
+        MatOfPoint2f div = new MatOfPoint2f();
+        Core.repeat(new MatOfPoint2f(new Point(focalCenterX, focalCenterY)),
+                undistortedPoints.rows(), undistortedPoints.cols(), sub);
+        Core.repeat(new MatOfPoint2f(new Point(focalLengthX, focalLengthY)),
+                undistortedPoints.rows(), undistortedPoints.cols(), div);
+
+        MatOfPoint2f result1 = new MatOfPoint2f();
+        MatOfPoint2f result2 = new MatOfPoint2f();
+        Core.subtract(undistortedPoints, sub, result1);
+        Core.divide(result1, div, result2);
+
+        undistortedPoints.release();
+        sub.release();
+        div.release();
+        result1.release();
+        return result2;
+    }
+
+    private static Point getImageCenter(CamConfig camConfig) {
+        MatOfPoint2f point = new MatOfPoint2f(new Point(0, 0));
+        MatOfPoint2f result = unprojectPoints(point, camConfig);
+
+        return new Point(result.get(0, 0));
+    }
+
+    private static Point3 transposeCenter(CamConfig camConfig, Mat R, Mat t) {
+        Mat tagCenter = Mat.zeros(3, 1, CvType.CV_64F);
+        Mat tagCenterInCamera = convertCoordinateSystem(tagCenter, R, t);
+        //Mat tagCenterInWorld = camToWorld(tagCenterInCamera, camConfig);
+
+        Mat result = tagCenterInCamera.t().reshape(3);
+        return new Point3(result.get(0, 0));
+        /*Point imageCenter = getImageCenter(camConfig);
+
+        Mat result = tagCenterInCamera.t().reshape(3);
+        Point3 p = new Point3(result.get(0, 0));
+        p.x += imageCenter.x;
+        p.y += imageCenter.y;
+        return p;*/
+    }
+
+    /*private static Mat convertMatCoordinateSystem(Mat mat) {
         // opencv is X right, Y down, Z forward
         // we want X right, Y up, Z forward
         Mat result = new Mat();
         Core.multiply(mat, new Scalar(1, -1, 1), result);
         return result;
-    }
+    }*/
 
     private static void drawBoxes(Mat img, Point[] points, Scalar color) {
         assert points.length == 8;
