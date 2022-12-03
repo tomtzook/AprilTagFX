@@ -20,16 +20,11 @@ import org.opencv.core.Point3;
 import org.opencv.core.Scalar;
 import org.opencv.imgproc.Imgproc;
 
-import java.io.Closeable;
-import java.io.IOException;
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
-import java.util.Set;
 
 public class Processor implements AutoCloseable {
 
@@ -104,7 +99,9 @@ public class Processor implements AutoCloseable {
                 Detection detection = detections.next();
 
                 TagPose pose = estimatePose(detection, detectionInfo);
-                Point3 centerFromCamera = transposeCenter(pose.R, pose.t);
+                //Mat pose_R = convertMatCoordinateSystem(pose.R);
+                //Mat pose_t = convertMatCoordinateSystem(pose.t);
+                Point3 centerFromCamera = transposeCenter(img, camConfig, pose.R, pose.t);
 
                 Vector3 objectCenterVec = new Vector3(centerFromCamera.x, centerFromCamera.y, centerFromCamera.z);
                 result.put(new TagInfo(detection.id, objectCenterVec));
@@ -144,19 +141,19 @@ public class Processor implements AutoCloseable {
         return new TagPose(pose_R, pose.t, pose.error);
     }
 
-    public static MatOfPoint2f projectPoints(MatOfPoint3f mat, CamConfig camConfig, Mat R, Mat t) {
+    private static MatOfPoint2f projectPoints(MatOfPoint3f mat, CamConfig camConfig, Mat R, Mat t) {
         MatOfPoint2f imagePoints = new MatOfPoint2f();
         Calib3d.projectPoints(mat, R, t, camConfig.getIntrinsicMatrix(), camConfig.getDistCoefficients(), imagePoints);
         return imagePoints;
     }
 
-    public static MatOfPoint2f projectPoints(MatOfPoint3f mat, CamConfig camConfig) {
+    private static MatOfPoint2f projectPoints(MatOfPoint3f mat, CamConfig camConfig) {
         return projectPoints(mat, camConfig,
                 Mat.zeros(3, 1, CvType.CV_64F),
                 Mat.zeros(3, 1, CvType.CV_64F));
     }
 
-    public static Point3 transposeCenter(Mat R, Mat t) {
+    private static Point3 transposeCenter(Mat img, CamConfig camConfig, Mat R, Mat t) {
         Mat centerPoint = Mat.zeros(3, 1, CvType.CV_64F);
         Mat result = new Mat();
         Core.add(R.cross(centerPoint), t, result);
@@ -168,7 +165,15 @@ public class Processor implements AutoCloseable {
         );
     }
 
-    public static void drawBoxes(Mat img, Point[] points, Scalar color) {
+    private static Mat convertMatCoordinateSystem(Mat mat) {
+        // opencv is X right, Y down, Z forward
+        // we want X right, Y up, Z forward
+        Mat result = new Mat();
+        Core.multiply(mat, new Scalar(1, -1, 1), result);
+        return result;
+    }
+
+    private static void drawBoxes(Mat img, Point[] points, Scalar color) {
         assert points.length == 8;
 
         Imgproc.line(img, points[0], points[1], color, 1);
@@ -187,7 +192,7 @@ public class Processor implements AutoCloseable {
         Imgproc.line(img, points[3], points[7], color, 1);
     }
 
-    public static void makeBoundingBox(Mat img, CamConfig camConfig, Mat R, Mat t, double tagSize, Scalar color) {
+    private static void makeBoundingBox(Mat img, CamConfig camConfig, Mat R, Mat t, double tagSize, Scalar color) {
         Mat opoints = new Mat(8, 1, CvType.CV_32FC3);
         opoints.put(0, 0,
                 -1, -1, 0,
