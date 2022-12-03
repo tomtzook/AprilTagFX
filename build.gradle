@@ -1,0 +1,71 @@
+plugins {
+    id 'application'
+    id 'org.openjfx.javafxplugin' version '0.0.9'
+}
+
+def SUPPORTED_ARCHES = ['windowsx86-64', 'linuxx86-64']
+
+sourceCompatibility = JavaVersion.VERSION_11
+
+repositories {
+    mavenCentral()
+    mavenLocal()
+
+    maven {
+        url('https://frcmaven.wpi.edu/artifactory/release')
+    }
+}
+
+configurations {
+    nativeZip
+    implementation.extendsFrom nativeZip
+}
+
+dependencies {
+    ext.YEAR = WPILIB_VERSION.split('\\.')[0]
+
+    implementation group: "edu.wpi.first.thirdparty.frc${YEAR}.opencv", name: 'opencv-java', version: "$OPENCV_VERSION"
+
+    SUPPORTED_ARCHES.forEach({
+        nativeZip group: "edu.wpi.first.thirdparty.frc${YEAR}.opencv", name: 'opencv-jni', version: "$OPENCV_VERSION", classifier: "$it", transitive: false
+    })
+
+    implementation "com.flash3388:apriltags4j:1.0.0-beta.2"
+    implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
+    implementation 'com.github.tomtzook:castle:2.0.0-beta.7'
+    implementation group: 'com.github.tomtzook', name: 'jmath', version: '1.1.0'
+    implementation group: 'org.controlsfx', name: 'controlsfx', version: '11.1.1'
+    implementation group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.4.2'
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-params', version: '5.4.2'
+    testImplementation group: 'org.junit.platform', name: 'junit-platform-runner', version: '1.2.0'
+    testImplementation group: 'org.mockito', name: 'mockito-core', version: '2.23.4'
+    testImplementation group: 'org.mockito', name: 'mockito-junit-jupiter', version: '2.23.0'
+    testImplementation group: 'org.hamcrest', name: 'hamcrest', version: '2.1'
+}
+
+test {
+    useJUnitPlatform()
+
+    testLogging {
+        events "failed"
+        exceptionFormat "full"
+        showStackTraces true
+    }
+}
+
+jar {
+
+}
+
+javafx {
+    version = '11'
+    modules = [ 'javafx.controls' ]
+}
+
+application {
+    mainClassName = 'com.flash3388.apriltagfx.Main'
+    applicationName = 'AprilTagFX'
+}
+
