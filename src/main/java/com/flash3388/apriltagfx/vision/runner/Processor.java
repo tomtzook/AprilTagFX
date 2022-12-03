@@ -80,6 +80,7 @@ public class Processor implements AutoCloseable {
         if (!config.getFamily().equals(mConfiguredFamilyType)) {
             if (mConfiguredFamily != null) {
                 mDetector.removeFamily(mConfiguredFamily);
+                mConfiguredFamily.close();
             }
 
             mConfiguredFamilyType = config.getFamily();

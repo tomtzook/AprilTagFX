@@ -1,11 +1,17 @@
 package com.flash3388.apriltagfx;
 
+import com.castle.code.Natives;
+import com.castle.exceptions.CodeLoadException;
+import com.castle.exceptions.FindException;
+import com.castle.util.closeables.Closeables;
 import com.flash3388.apriltagfx.gui.ApplicationGui;
+import com.flash3388.apriltagfx.gui.Dialogs;
 import com.flash3388.apriltagfx.gui.MainWindow;
 import javafx.application.Platform;
 import javafx.stage.Stage;
 import org.slf4j.Logger;
 
+import java.io.IOException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.atomic.AtomicReference;
@@ -59,12 +65,30 @@ public class AprilTagFx {
                     runLatch.countDown();
                 });
                 primaryStage.show();
+
+                try {
+                    loadNatives();
+                } catch (Throwable t) {
+                    Dialogs.showError("Error", "Failed loading natives", t);
+                    primaryStage.close();
+                    Closeables.silentClose(mainWindow);
+                    runLatch.countDown();
+                }
             });
 
             runLatch.await();
         } catch (Exception e) {
             Platform.exit();
             throw new InitializationException(e);
+        }
+    }
+
+    private static void loadNatives() throws CodeLoadException {
+        try {
+            Natives.newLoader()
+                    .load("opencv_java\\d+", "apriltags_jni");
+        } catch (FindException | IOException e) {
+            throw new CodeLoadException(e);
         }
     }
 }

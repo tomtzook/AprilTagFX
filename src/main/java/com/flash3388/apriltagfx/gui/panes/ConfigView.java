@@ -104,6 +104,10 @@ public class ConfigView extends VBox {
         }
 
         double tagSize = Double.longBitsToDouble(mConfiguredTagSize.get());
+        if (tagSize <= 0) {
+            return Optional.empty();
+        }
+
         FamilyType familyType = mSelectedFamilyType.get();
 
         return Optional.of(new ProcessingConfig(camConfig, tagSize, familyType));

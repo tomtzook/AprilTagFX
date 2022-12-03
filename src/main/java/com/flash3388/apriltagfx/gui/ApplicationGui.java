@@ -7,20 +7,20 @@ import java.util.concurrent.BrokenBarrierException;
 import java.util.concurrent.CyclicBarrier;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
+import java.util.concurrent.atomic.AtomicReference;
 
 public class ApplicationGui extends Application {
 
-    private static ApplicationGui sInstance;
+    private static AtomicReference<ApplicationGui> sInstance = new AtomicReference<>();
     private static CyclicBarrier sLaunchBarrier = new CyclicBarrier(2);
 
-    private Stage mPrimaryStage;
+    private final AtomicReference<Stage> mPrimaryStage = new AtomicReference<>();
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        sInstance = this;
+        sInstance.set(this);
+        mPrimaryStage.set(primaryStage);
         sLaunchBarrier.await();
-
-        mPrimaryStage = primaryStage;
     }
 
     public static Stage startGui(ExecutorService executorService) {
@@ -32,6 +32,6 @@ public class ApplicationGui extends Application {
 
         }
 
-        return sInstance.mPrimaryStage;
+        return sInstance.get().mPrimaryStage.get();
     }
 }

@@ -9,7 +9,6 @@ sourceCompatibility = JavaVersion.VERSION_11
 
 repositories {
     mavenCentral()
-    mavenLocal()
 
     maven {
         url('https://frcmaven.wpi.edu/artifactory/release')
@@ -30,9 +29,9 @@ dependencies {
         nativeZip group: "edu.wpi.first.thirdparty.frc${YEAR}.opencv", name: 'opencv-jni', version: "$OPENCV_VERSION", classifier: "$it", transitive: false
     })
 
-    implementation "com.flash3388:apriltags4j:1.0.0-beta.2"
+    implementation "com.flash3388:apriltags4j:0.1.1"
     implementation group: 'com.google.code.gson', name: 'gson', version: '2.8.5'
-    implementation 'com.github.tomtzook:castle:2.0.0-beta.7'
+    implementation 'com.github.tomtzook:castle:2.0.1'
     implementation group: 'com.github.tomtzook', name: 'jmath', version: '1.1.0'
     implementation group: 'org.controlsfx', name: 'controlsfx', version: '11.1.1'
     implementation group: 'net.sourceforge.argparse4j', name: 'argparse4j', version: '0.8.1'
@@ -62,6 +61,7 @@ jar {
 javafx {
     version = '11'
     modules = [ 'javafx.controls' ]
+    configuration = 'compileOnly'
 }
 
 application {

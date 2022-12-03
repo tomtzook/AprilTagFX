@@ -21,7 +21,7 @@ public class ProcessingControl implements AutoCloseable {
     private final MainWindow mWindow;
     private final ScheduledExecutorService mExecutorService;
     private final AtomicReference<Future<?>> mRunFuture;
-    private final Processor mProcessor;
+    private Processor mProcessor;
 
     private ImageStream mImageStream;
 
@@ -29,7 +29,7 @@ public class ProcessingControl implements AutoCloseable {
         mWindow = window;
         mExecutorService = Executors.newSingleThreadScheduledExecutor();
         mRunFuture = new AtomicReference<>(null);
-        mProcessor = new Processor();
+        mProcessor = null;
 
         mImageStream = new EmptyImage();
 
@@ -42,6 +42,10 @@ public class ProcessingControl implements AutoCloseable {
     }
 
     public synchronized void start() {
+        if (mProcessor == null) {
+            mProcessor = new Processor();
+        }
+
         Future<?> future = mExecutorService.scheduleAtFixedRate(
                 new RunningTask(
                         mImageStream,
@@ -66,7 +70,10 @@ public class ProcessingControl implements AutoCloseable {
         stop();
         mExecutorService.shutdownNow();
         mImageStream.close();
-        mProcessor.close();
+
+        if (mProcessor != null) {
+            mProcessor.close();
+        }
     }
 
     private void selectNewStream(StreamSelector selector) {
