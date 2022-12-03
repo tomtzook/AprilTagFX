@@ -23,12 +23,14 @@ public class AprilTagFx {
     private static final double WINDOW_WIDTH = 1800;
     private static final double WINDOW_HEIGHT = 800;
 
+    private final ProgramOptions mProgramOptions;
     private final ExecutorService mExecutorService;
     private final Logger mLogger;
 
     private final AtomicReference<MainWindow> mMainWindow;
 
-    public AprilTagFx(ExecutorService executorService, Logger logger) {
+    public AprilTagFx(ProgramOptions programOptions, ExecutorService executorService, Logger logger) {
+        mProgramOptions = programOptions;
         mExecutorService = executorService;
         mLogger = logger;
         mMainWindow = new AtomicReference<>();
@@ -83,10 +85,15 @@ public class AprilTagFx {
         }
     }
 
-    private static void loadNatives() throws CodeLoadException {
+    private void loadNatives() throws CodeLoadException {
         try {
-            Natives.newLoader()
-                    .load("opencv_java\\d+", "apriltags_jni");
+            Natives.Loader loader = Natives.newLoader();
+
+            if (mProgramOptions.getCustomNativesDir().isPresent()) {
+                loader.firstFrom(mProgramOptions.getCustomNativesDir().get());
+            }
+
+            loader.load("opencv_java\\d+", "apriltags_jni");
         } catch (FindException | IOException e) {
             throw new CodeLoadException(e);
         }

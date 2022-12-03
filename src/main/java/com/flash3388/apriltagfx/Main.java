@@ -9,6 +9,8 @@ import net.sourceforge.argparse4j.inf.ArgumentParserException;
 import net.sourceforge.argparse4j.inf.Namespace;
 import org.slf4j.Logger;
 
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -19,14 +21,14 @@ public class Main {
                 .enableConsoleLogging(true)
                 .build();
 
-        ProgramOptions options = handleArguments(args);
+        ProgramOptions programOptions = handleArguments(args);
 
         ExecutorService executorService = Executors.newFixedThreadPool(2);
 
         Closer closer = Closer.empty();
         closer.add(executorService::shutdownNow);
         try {
-            AprilTagFx aprilTagFx = new AprilTagFx(executorService, logger);
+            AprilTagFx aprilTagFx = new AprilTagFx(programOptions, executorService, logger);
             aprilTagFx.run();
         } finally {
             closer.close();
@@ -39,9 +41,16 @@ public class Main {
         ArgumentParser parser = ArgumentParsers.newFor("AprilTagFx").build()
                 .defaultHelp(true)
                 .description("");
+        parser.addArgument("--natives-dir")
+                .dest("nativesDir")
+                .type(String.class)
+                .required(false);
 
         Namespace namespace = parser.parseArgs(args);
 
-        return new ProgramOptions();
+        Path nativesDirPath = namespace.getString("nativesDir") != null ?
+                Paths.get(namespace.getString("nativesDir")) :
+                null;
+        return new ProgramOptions(nativesDirPath);
     }
 }
