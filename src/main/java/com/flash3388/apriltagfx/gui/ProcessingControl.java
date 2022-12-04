@@ -7,6 +7,8 @@ import com.flash3388.apriltagfx.gui.stream.selectors.StaticImageSelector;
 import com.flash3388.apriltagfx.gui.stream.selectors.StreamSelector;
 import com.flash3388.apriltagfx.vision.runner.Processor;
 import com.flash3388.apriltagfx.vision.runner.RunningTask;
+import com.flash3388.apriltags4j.Detector;
+import com.flash3388.apriltags4j.DetectorConfiguration;
 import javafx.stage.Stage;
 
 import java.util.Optional;
@@ -41,17 +43,26 @@ public class ProcessingControl implements AutoCloseable {
         });
     }
 
-    public synchronized void start() {
-        if (mProcessor == null) {
-            mProcessor = new Processor();
-        }
+    public DetectorConfiguration getDetectorConfig() {
+        return getProcessor().getDetector().getConfiguration();
+    }
 
+    public synchronized void setDetectorConfig(DetectorConfiguration config) {
+        stop();
+        try {
+            getProcessor().getDetector().setConfiguration(config);
+        } finally {
+            start();
+        }
+    }
+
+    public synchronized void start() {
         Future<?> future = mExecutorService.scheduleAtFixedRate(
                 new RunningTask(
                         mImageStream,
                         mWindow::getProcessingConfig,
                         mWindow::loadOutput,
-                        mProcessor),
+                        getProcessor()),
                 100,
                 50,
                 TimeUnit.MILLISECONDS);
@@ -74,6 +85,14 @@ public class ProcessingControl implements AutoCloseable {
         if (mProcessor != null) {
             mProcessor.close();
         }
+    }
+
+    private synchronized Processor getProcessor() {
+        if (mProcessor == null) {
+            mProcessor = new Processor();
+        }
+
+        return mProcessor;
     }
 
     private void selectNewStream(StreamSelector selector) {

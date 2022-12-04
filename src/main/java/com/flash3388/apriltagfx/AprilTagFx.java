@@ -75,7 +75,10 @@ public class AprilTagFx {
                     primaryStage.close();
                     Closeables.silentClose(mainWindow);
                     runLatch.countDown();
+                    return;
                 }
+
+                mainWindow.loadDetectorConfig();
             });
 
             runLatch.await();

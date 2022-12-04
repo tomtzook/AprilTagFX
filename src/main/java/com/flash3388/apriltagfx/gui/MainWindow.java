@@ -101,6 +101,10 @@ public class MainWindow implements AutoCloseable {
         Platform.runLater(mOutputView::clear);
     }
 
+    public void loadDetectorConfig() {
+        mConfigView.loadDetectorConfig(mProcessingControl);
+    }
+
     @Override
     public void close() throws Exception {
         mProcessingControl.close();

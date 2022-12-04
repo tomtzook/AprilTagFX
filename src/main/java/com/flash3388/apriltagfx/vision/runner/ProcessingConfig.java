@@ -29,13 +29,7 @@ public class ProcessingConfig {
         CamConfig camConfig = getCameraConfig();
         Mat intrinsicMat = camConfig.getIntrinsicMatrix();
 
-        DetectionInfo detectionInfo = new DetectionInfo();
-        detectionInfo.tagSize = getTagSizeMeters();
-        detectionInfo.focalCenterX = intrinsicMat.get(0, 2)[0];
-        detectionInfo.focalCenterY = intrinsicMat.get(1, 2)[0];
-        detectionInfo.focalLengthX = intrinsicMat.get(0, 0)[0];
-        detectionInfo.focalLengthY = intrinsicMat.get(1, 1)[0];
-        return detectionInfo;
+        return new DetectionInfo(getTagSizeMeters(), intrinsicMat);
     }
 
     public FamilyType getFamily() {

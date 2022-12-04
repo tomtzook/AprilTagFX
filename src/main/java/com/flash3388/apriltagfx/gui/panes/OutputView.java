@@ -48,6 +48,7 @@ public class OutputView extends HBox {
         centerPointColumn.setMinWidth(150);
 
         setPadding(new Insets(5));
+        setMaxHeight(200);
         //noinspection unchecked
         mResultTable.getColumns().addAll(idColumn, distanceColumn, azimuthColumn, inclinationColumn, centerPointColumn);
     }

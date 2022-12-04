@@ -14,7 +14,6 @@ import org.opencv.core.Core;
 import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfPoint2f;
-import org.opencv.core.MatOfPoint3;
 import org.opencv.core.MatOfPoint3f;
 import org.opencv.core.Point;
 import org.opencv.core.Point3;
@@ -72,6 +71,10 @@ public class Processor implements AutoCloseable {
         mAvailableColors = new ArrayDeque<>();
     }
 
+    public Detector getDetector() {
+        return mDetector;
+    }
+
     public Result process(Mat img, ProcessingConfig config) throws Exception {
         if (!config.getFamily().equals(mConfiguredFamilyType)) {
             if (mConfiguredFamily != null) {
@@ -118,7 +121,11 @@ public class Processor implements AutoCloseable {
                 }
 
                 // draw info
-                makeBoundingBox(img, camConfig, pose.R, pose.t, detectionInfo.tagSize, color);
+                pose.drawBoundingBox(img,
+                        camConfig.getIntrinsicMatrix(),
+                        camConfig.getDistCoefficients(),
+                        detectionInfo.tagSizeMeters,
+                        color);
                 Imgproc.putText(
                         img,
                         String.valueOf(detection.id),

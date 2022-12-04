@@ -1,6 +1,7 @@
 package com.flash3388.apriltagfx.gui.panes;
 
 import com.flash3388.apriltagfx.gui.Dialogs;
+import com.flash3388.apriltagfx.gui.ProcessingControl;
 import com.flash3388.apriltagfx.gui.controls.LabeledDoubleSlider;
 import com.flash3388.apriltagfx.io.CamConfigIo;
 import com.flash3388.apriltagfx.vision.CamConfig;
@@ -25,6 +26,7 @@ import java.util.concurrent.atomic.AtomicReference;
 public class ConfigView extends VBox {
 
     private final Stage mOwner;
+    private final DetectorConfigView mDetectorConfigView;
     private final AtomicReference<CamConfig> mLoadedCameraConfig;
     private final AtomicReference<FamilyType> mSelectedFamilyType;
     private final AtomicLong mConfiguredTagSize;
@@ -33,6 +35,7 @@ public class ConfigView extends VBox {
 
     public ConfigView(Stage owner) {
         mOwner = owner;
+        mDetectorConfigView = new DetectorConfigView();
         mLoadedCameraConfig = new AtomicReference<>();
         mSelectedFamilyType = new AtomicReference<>(FamilyType.values()[0]);
         mConfiguredTagSize = new AtomicLong(0);
@@ -68,7 +71,27 @@ public class ConfigView extends VBox {
 
         setPadding(new Insets(5));
         setSpacing(10);
-        getChildren().addAll(camConfigPane, tagSizeSlider, familyTypeComboBox);
+        getChildren().addAll(camConfigPane, tagSizeSlider, familyTypeComboBox, mDetectorConfigView);
+    }
+
+    public void loadDetectorConfig(ProcessingControl processingControl) {
+        mDetectorConfigView.linkToDetector(processingControl);
+    }
+
+    public Optional<ProcessingConfig> getProcessingConfig() {
+        CamConfig camConfig = mLoadedCameraConfig.get();
+        if (camConfig == null) {
+            return Optional.empty();
+        }
+
+        double tagSize = Double.longBitsToDouble(mConfiguredTagSize.get());
+        if (tagSize <= 0) {
+            return Optional.empty();
+        }
+
+        FamilyType familyType = mSelectedFamilyType.get();
+
+        return Optional.of(new ProcessingConfig(camConfig, tagSize, familyType));
     }
 
     private void loadNewCamConfig() {
@@ -95,21 +118,5 @@ public class ConfigView extends VBox {
         } else {
             return Optional.of(file.toPath());
         }
-    }
-
-    public Optional<ProcessingConfig> getProcessingConfig() {
-        CamConfig camConfig = mLoadedCameraConfig.get();
-        if (camConfig == null) {
-            return Optional.empty();
-        }
-
-        double tagSize = Double.longBitsToDouble(mConfiguredTagSize.get());
-        if (tagSize <= 0) {
-            return Optional.empty();
-        }
-
-        FamilyType familyType = mSelectedFamilyType.get();
-
-        return Optional.of(new ProcessingConfig(camConfig, tagSize, familyType));
     }
 }
